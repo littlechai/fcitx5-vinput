@@ -60,6 +60,7 @@ install(TARGETS vinput
 
 install(PROGRAMS
     ${CMAKE_SOURCE_DIR}/data/asr-providers/elevenlabs_speech_to_text.py
+    ${CMAKE_SOURCE_DIR}/data/asr-providers/mlx_audio_speech_to_text.py
     DESTINATION ${VINPUT_ASR_PROVIDER_DIR}
 )
 
