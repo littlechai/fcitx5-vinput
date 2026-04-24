@@ -4,16 +4,36 @@ SHERPA_ONNX_REPO="k2-fsa/sherpa-onnx"
 
 sherpa_onnx_set_vars() {
     local version="${1:?version is required}"
+    local target_arch="${2:-$(uname -m)}"
+    local arch
+    local suffix="shared-no-tts"
+
+    case "${target_arch}" in
+        x86_64)
+            arch="x64"
+            ;;
+        aarch64)
+            arch="aarch64"
+            suffix="shared-cpu"
+            ;;
+        *)
+            arch="${target_arch}"
+            ;;
+    esac
 
     SHERPA_ONNX_VERSION="${version}"
-    SHERPA_ONNX_ARCHIVE="sherpa-onnx-v${version}-linux-x64-shared-no-tts.tar.bz2"
-    SHERPA_ONNX_STRIP_DIR="sherpa-onnx-v${version}-linux-x64-shared-no-tts"
+    SHERPA_ONNX_ARCHIVE="sherpa-onnx-v${version}-linux-${arch}-${suffix}.tar.bz2"
+    SHERPA_ONNX_STRIP_DIR="sherpa-onnx-v${version}-linux-${arch}-${suffix}"
     SHERPA_ONNX_URL="https://github.com/${SHERPA_ONNX_REPO}/releases/download/v${version}/${SHERPA_ONNX_ARCHIVE}"
     SHERPA_ONNX_SHA256=""
 
     case "${version}" in
         1.12.34)
-            SHERPA_ONNX_SHA256="1c59ff6dcea5f2b56d16273a929b81e383f2b7c636f689a0bdf04a940982512a"
+            if [[ "${target_arch}" == "aarch64" ]]; then
+                SHERPA_ONNX_SHA256="436b207c51c2eb3d281f64d68326123ccfd76062155865c7f328e421ed55b4e1"
+            elif [[ "${target_arch}" == "x86_64" ]]; then
+                SHERPA_ONNX_SHA256="1c59ff6dcea5f2b56d16273a929b81e383f2b7c636f689a0bdf04a940982512a"
+            fi
             ;;
         1.12.31)
             SHERPA_ONNX_SHA256="c60e373867cdb951a7156b046f673cabf1d228c9cee531a848d205cebf63882c"

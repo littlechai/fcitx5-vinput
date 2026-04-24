@@ -39,6 +39,27 @@ fi
 
 tar -xjf "${archive_path}" -C "${workdir}"
 
+# 修复 aarch64 包缺失头文件的问题
+if [[ "$(uname -m)" == "aarch64" && ! -d "${workdir}/${SHERPA_ONNX_STRIP_DIR}/include" ]]; then
+    echo "aarch64 package missing include directory, fetching headers from x64 package..." >&2
+    # Save current vars
+    main_archive="${SHERPA_ONNX_ARCHIVE}"
+    main_strip_dir="${SHERPA_ONNX_STRIP_DIR}"
+
+    # Get x64 vars
+    sherpa_onnx_set_vars "${version}" "x86_64"
+    x64_archive="${SHERPA_ONNX_ARCHIVE}"
+    x64_url="${SHERPA_ONNX_URL}"
+    x64_strip_dir="${SHERPA_ONNX_STRIP_DIR}"
+
+    curl -fL --retry 3 -o "${workdir}/${x64_archive}" "${x64_url}"
+    tar -xjf "${workdir}/${x64_archive}" -C "${workdir}" "${x64_strip_dir}/include"
+    mv "${workdir}/${x64_strip_dir}/include" "${workdir}/${main_strip_dir}/"
+
+    # Restore main vars (optional but good practice if more steps follow)
+    sherpa_onnx_set_vars "${version}"
+fi
+
 install -d "${prefix}/lib" "${prefix}/include/sherpa-onnx/c-api"
 install -m 755 "${workdir}/${SHERPA_ONNX_STRIP_DIR}/lib/"*.so "${prefix}/lib/"
 install -m 644 "${workdir}/${SHERPA_ONNX_STRIP_DIR}/include/sherpa-onnx/c-api/"*.h "${prefix}/include/sherpa-onnx/c-api/"
