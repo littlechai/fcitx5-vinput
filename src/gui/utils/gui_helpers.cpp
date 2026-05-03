@@ -13,6 +13,7 @@
 #include <QUrl>
 
 #include "common/llm/defaults.h"
+#include "common/utils/url_utils.h"
 #include "gui/utils/config_manager.h"
 
 namespace vinput::gui {
@@ -173,10 +174,9 @@ void FetchModelsFromProviderAsync(const ProviderInfo &provider,
     lineEdit->setPlaceholderText(GuiTranslate("Loading models..."));
   }
 
-  QString url = provider.base_url;
-  if (!url.endsWith('/'))
-    url += '/';
-  url += vinput::llm::kOpenAiModelsPath;
+  const std::string url_str = vinput::url::JoinPath(
+      provider.base_url.toStdString(), vinput::llm::kOpenAiModelsPath);
+  QString url = QString::fromStdString(url_str);
 
   auto *nam = new QNetworkAccessManager(comboModel);
   QNetworkRequest req{QUrl(url)};

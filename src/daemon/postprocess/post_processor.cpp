@@ -3,6 +3,7 @@
 #include "common/llm/defaults.h"
 #include "common/utils/debug_log.h"
 #include "common/utils/path_utils.h"
+#include "common/utils/url_utils.h"
 
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
@@ -91,12 +92,7 @@ std::string BuildRequestUrl(const std::string &base_url) {
     return base_url;
   }
 
-  std::string url = base_url;
-  while (!url.empty() && url.back() == '/') {
-    url.pop_back();
-  }
-  url += kChatCompletions;
-  return url;
+  return vinput::url::JoinPath(base_url, kChatCompletions);
 }
 
 std::string QuoteForLog(std::string_view text) {
