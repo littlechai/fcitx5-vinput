@@ -25,7 +25,7 @@ add_custom_command(
     COMMENT "Copying CLI translations into build-tree locale directory"
 )
 
-add_custom_target(vinput-cli-translations ALL
+add_custom_target(gettext-translations ALL
     DEPENDS ${VINPUT_BUILD_LOCALE_FILE}
 )
 

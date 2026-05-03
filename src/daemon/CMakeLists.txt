@@ -20,7 +20,7 @@ endif()
 
 set(VINPUT_VAD_MODEL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/fcitx5-vinput/vad")
 
-add_executable(vinput-daemon
+add_executable(daemon
     main.cpp
     asr/runtime/backend_factory.cpp
     asr/runtime/recognition_session_manager.cpp
@@ -37,18 +37,20 @@ add_executable(vinput-daemon
     postprocess/post_processor.cpp
 )
 
-target_compile_definitions(vinput-daemon PRIVATE
+set_target_properties(daemon PROPERTIES OUTPUT_NAME "vinput-daemon")
+
+target_compile_definitions(daemon PRIVATE
     VINPUT_VAD_MODEL_PATH="${VINPUT_VAD_MODEL_DIR}/silero_vad.onnx"
 )
 
-target_include_directories(vinput-daemon PRIVATE
+target_include_directories(daemon PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${PIPEWIRE_INCLUDE_DIRS}
     ${SHERPA_ONNX_INCLUDE_DIR}
 )
 
-target_link_libraries(vinput-daemon PRIVATE
-    vinput-common
+target_link_libraries(daemon PRIVATE
+    common
     ${PIPEWIRE_LIBRARIES}
     ${SDBUS_LIBRARIES}
     CURL::libcurl
@@ -57,11 +59,11 @@ target_link_libraries(vinput-daemon PRIVATE
     pthread
 )
 
-set_target_properties(vinput-daemon PROPERTIES
+set_target_properties(daemon PROPERTIES
     BUILD_RPATH "${SHERPA_ONNX_RUNTIME_DIR}"
 )
 if(VINPUT_RUNTIME_MODE STREQUAL "bundled")
-    set_target_properties(vinput-daemon PROPERTIES
+    set_target_properties(daemon PROPERTIES
         INSTALL_RPATH "${VINPUT_DAEMON_INSTALL_RPATH}"
     )
 endif()
@@ -73,7 +75,7 @@ configure_file("${CMAKE_SOURCE_DIR}/data/org.fcitx.Vinput.service.in"
                "${VINPUT_DBUS_SERVICE_FILE}"
                @ONLY)
 
-install(TARGETS vinput-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS daemon DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES
     "${VINPUT_SYSTEMD_SERVICE_FILE}"
     DESTINATION "${VINPUT_SYSTEMD_USER_DIR}"

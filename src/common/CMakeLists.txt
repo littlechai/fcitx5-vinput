@@ -14,11 +14,11 @@ set(VINPUT_CONFIG_SOURCES
     utils/file_utils.cpp
 )
 
-add_library(vinput-config STATIC
+add_library(config STATIC
     ${VINPUT_CONFIG_SOURCES}
 )
 
-add_library(vinput-common STATIC
+add_library(common STATIC
     dbus/error_info.cpp
     ${VINPUT_CONFIG_SOURCES}
     asr/recognition_result.cpp
@@ -34,23 +34,25 @@ add_library(vinput-common STATIC
     utils/process_utils.cpp
 )
 
-set_target_properties(vinput-common PROPERTIES
+set_target_properties(common PROPERTIES
     POSITION_INDEPENDENT_CODE ON
+    OUTPUT_NAME "vinput-common"
 )
 
-set_target_properties(vinput-config PROPERTIES
+set_target_properties(config PROPERTIES
     POSITION_INDEPENDENT_CODE ON
+    OUTPUT_NAME "vinput-config"
 )
 
-target_include_directories(vinput-common PUBLIC
+target_include_directories(common PUBLIC
     ${CMAKE_SOURCE_DIR}/src
 )
 
-target_include_directories(vinput-config PUBLIC
+target_include_directories(config PUBLIC
     ${CMAKE_SOURCE_DIR}/src
 )
 
-target_link_libraries(vinput-common PUBLIC
+target_link_libraries(common PUBLIC
     Fcitx5::Config
     nlohmann_json::nlohmann_json
     CURL::libcurl
@@ -59,7 +61,7 @@ target_link_libraries(vinput-common PUBLIC
     ${GETTEXT_LIBRARIES}
 )
 
-target_link_libraries(vinput-config PUBLIC
+target_link_libraries(config PUBLIC
     Fcitx5::Config
     nlohmann_json::nlohmann_json
     ${GETTEXT_LIBRARIES}

@@ -40,10 +40,12 @@ set(VINPUT_GUI_HEADERS
     pages/hotwords/hotword_page.h
 )
 
-add_executable(vinput-gui
+add_executable(gui
     ${VINPUT_GUI_SOURCES}
     ${VINPUT_GUI_HEADERS}
 )
+
+set_target_properties(gui PROPERTIES OUTPUT_NAME "vinput-gui")
 
 set(VINPUT_GUI_DESKTOP_FILE
     "${CMAKE_CURRENT_BINARY_DIR}/vinput-gui.desktop")
@@ -78,28 +80,28 @@ else()
 endif()
 
 if(VINPUT_GUI_QM)
-    add_custom_target(vinput-gui-translations ALL DEPENDS ${VINPUT_GUI_QM})
+    add_custom_target(qt-translations ALL DEPENDS ${VINPUT_GUI_QM})
 endif()
 
-target_include_directories(vinput-gui PRIVATE
+target_include_directories(gui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
     ${PIPEWIRE_INCLUDE_DIRS}
     ${SDBUS_INCLUDE_DIRS}
 )
 
-target_link_libraries(vinput-gui
+target_link_libraries(gui
     PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
     Qt6::Network
-    vinput-common
+    common
     ${PIPEWIRE_LIBRARIES}
     ${SDBUS_LIBRARIES}
 )
 
-install(TARGETS vinput-gui
+install(TARGETS gui
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 

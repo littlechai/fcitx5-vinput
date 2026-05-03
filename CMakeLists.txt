@@ -91,6 +91,13 @@ add_subdirectory(src/cli)
 add_subdirectory(src/gui)
 add_subdirectory(po)
 
+# Umbrella target that builds every translation artefact (gettext .mo + Qt .qm)
+set(VINPUT_TRANSLATIONS_DEPS gettext-translations)
+if(TARGET qt-translations)
+    list(APPEND VINPUT_TRANSLATIONS_DEPS qt-translations)
+endif()
+add_custom_target(translations ALL DEPENDS ${VINPUT_TRANSLATIONS_DEPS})
+
 string(REPLACE "-" "~" VINPUT_DEBIAN_UPSTREAM_VERSION "${PROJECT_VERSION}")
 
 set(CPACK_PACKAGE_NAME "fcitx5-vinput")

@@ -18,7 +18,7 @@ endif()
 
 pkg_check_modules(PIPEWIRE REQUIRED libpipewire-0.3)
 
-add_executable(vinput
+add_executable(cli
     main.cpp
     utils/formatter.cpp
     utils/editor_utils.cpp
@@ -46,19 +46,21 @@ add_executable(vinput
     ${CMAKE_SOURCE_DIR}/src/common/audio/pipewire_device.cpp
 )
 
-target_include_directories(vinput PRIVATE
+set_target_properties(cli PROPERTIES OUTPUT_NAME "vinput")
+
+target_include_directories(cli PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${PIPEWIRE_INCLUDE_DIRS}
     ${SDBUS_INCLUDE_DIRS}
 )
 
-target_link_libraries(vinput PRIVATE
-    vinput-common
+target_link_libraries(cli PRIVATE
+    common
     CLI11::CLI11
     ${PIPEWIRE_LIBRARIES}
     ${SDBUS_LIBRARIES}
 )
 
-install(TARGETS vinput
+install(TARGETS cli
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
