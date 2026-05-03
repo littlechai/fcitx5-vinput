@@ -35,9 +35,6 @@ sherpa_onnx_set_vars() {
                 SHERPA_ONNX_SHA256="1c59ff6dcea5f2b56d16273a929b81e383f2b7c636f689a0bdf04a940982512a"
             fi
             ;;
-        1.12.31)
-            SHERPA_ONNX_SHA256="c60e373867cdb951a7156b046f673cabf1d228c9cee531a848d205cebf63882c"
-            ;;
     esac
 }
 
