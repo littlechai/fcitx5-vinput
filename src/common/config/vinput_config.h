@@ -1,12 +1,17 @@
 #pragma once
 
 #include <fcitx-config/configuration.h>
+#include <fcitx-config/enum.h>
 #include <fcitx-config/option.h>
+#include <fcitx-utils/i18n.h>
 #include <fcitx-utils/key.h>
 
 #include <memory>
 
 inline constexpr const char *kVinputConfigPath = "conf/vinput.conf";
+
+FCITX_CONFIG_ENUM(TriggerMode, Tap, Hold, Both)
+FCITX_CONFIG_ENUM_I18N_ANNOTATION(TriggerMode, N_("Tap"), N_("Hold"), N_("Both"))
 
 struct VinputSettings {
   fcitx::KeyList triggerKeys{fcitx::Key(FcitxKey_Alt_R)};
@@ -23,6 +28,7 @@ struct VinputSettings {
       fcitx::Key(FcitxKey_Page_Down),
       fcitx::Key(FcitxKey_KP_Page_Down),
   };
+  TriggerMode triggerMode{TriggerMode::Both};
 };
 
 class VinputConfig : public fcitx::Configuration {
@@ -63,6 +69,11 @@ public:
                 fcitx::DefaultMarshaller<fcitx::KeyList>,
                 fcitx::ToolTipAnnotation>
       pageNextKeys;
+
+  fcitx::Option<TriggerMode, fcitx::NoConstrain<TriggerMode>,
+                fcitx::DefaultMarshaller<TriggerMode>,
+                TriggerModeI18NAnnotation>
+      triggerMode;
 
   fcitx::ExternalOption modelManager;
 };

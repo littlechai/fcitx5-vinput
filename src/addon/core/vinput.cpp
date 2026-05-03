@@ -174,6 +174,7 @@ VinputEngine::~VinputEngine() {
   context_flush_timer_.reset();
   status_sync_event_.reset();
   pending_stop_event_.reset();
+  pending_start_event_.reset();
 
   pending_stop_call_slot_.reset();
   pending_start_call_slot_.reset();
@@ -214,6 +215,7 @@ void VinputEngine::applySettings() {
   command_keys_ = settings_.commandKeys;
   scene_menu_key_ = settings_.sceneMenuKeys;
   asr_menu_key_ = settings_.asrMenuKeys;
+  trigger_mode_ = settings_.triggerMode;
   reloadSceneConfig();
   reloadAsrMenuItems();
 }

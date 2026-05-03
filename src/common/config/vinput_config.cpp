@@ -84,6 +84,8 @@ std::string PageNextKeysTooltip() {
            "Down.");
 }
 
+std::string TriggerModeLabel() { return _("Trigger Mode"); }
+
 } // namespace
 
 VinputConfig::VinputConfig(const VinputSettings &settings)
@@ -105,6 +107,9 @@ VinputConfig::VinputConfig(const VinputSettings &settings)
       pageNextKeys(this, "PageNextKeys", PageNextKeysLabel(),
                    settings.pageNextKeys, TriggerKeyListConstrain(), {},
                    fcitx::ToolTipAnnotation(PageNextKeysTooltip())),
+      triggerMode(this, "TriggerMode", TriggerModeLabel(),
+                  settings.triggerMode, {}, {},
+                  TriggerModeI18NAnnotation()),
       modelManager(this, "ModelManager", _("Open Vinput Settings"),
                    "vinput-gui") {}
 
@@ -116,6 +121,7 @@ VinputSettings VinputConfig::settings() const {
   settings.asrMenuKeys = asrMenuKeys.value();
   settings.pagePrevKeys = pagePrevKeys.value();
   settings.pageNextKeys = pageNextKeys.value();
+  settings.triggerMode = triggerMode.value();
   return settings;
 }
 

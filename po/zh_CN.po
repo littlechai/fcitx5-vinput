@@ -1054,3 +1054,15 @@ msgstr "--extra-body 必须是 JSON 对象（例如 '{\"enable_thinking\": false
 #, c-format
 msgid "Invalid --extra-body JSON: %s"
 msgstr "--extra-body JSON 无效：%s"
+
+msgid "Trigger Mode"
+msgstr "触发模式"
+
+msgid "Tap"
+msgstr "短按"
+
+msgid "Hold"
+msgstr "长按"
+
+msgid "Both"
+msgstr "均可"

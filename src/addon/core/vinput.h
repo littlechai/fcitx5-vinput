@@ -66,6 +66,7 @@ private:
   bool handleResultMenuKeyEvent(fcitx::KeyEvent &keyEvent);
   bool isReleaseOfActiveTrigger(const fcitx::Key &key) const;
   void cancelPendingStop();
+  void cancelPendingStart();
   void scheduleStopRecording();
   void finishStopRecording();
   void restartDaemon();
@@ -182,10 +183,12 @@ private:
   std::atomic<uint64_t> asr_state_refresh_seq_{0};
   std::shared_ptr<bool> lifetime_token_ = std::make_shared<bool>(true);
   std::unique_ptr<fcitx::EventSourceTime> pending_stop_event_;
+  std::unique_ptr<fcitx::EventSourceTime> pending_start_event_;
   std::unique_ptr<fcitx::EventSourceTime> status_sync_event_;
   VinputSettings settings_;
   mutable std::unique_ptr<VinputConfig> ui_config_;
   int commit_write_count_ = 0;
+  TriggerMode trigger_mode_{TriggerMode::Both};
 };
 
 class VinputEngineFactory : public fcitx::AddonFactory {
