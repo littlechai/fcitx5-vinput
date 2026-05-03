@@ -89,7 +89,10 @@ std::string TriggerModeLabel() { return _("Trigger Mode"); }
 } // namespace
 
 VinputConfig::VinputConfig(const VinputSettings &settings)
-    : triggerKeys(this, "TriggerKey", TriggerKeyLabel(), settings.triggerKeys,
+    : triggerMode(this, "TriggerMode", TriggerModeLabel(),
+                  settings.triggerMode, {}, {},
+                  TriggerModeI18NAnnotation()),
+      triggerKeys(this, "TriggerKey", TriggerKeyLabel(), settings.triggerKeys,
                  TriggerKeyListConstrain(), {},
                  fcitx::ToolTipAnnotation(TriggerKeyTooltip())),
       commandKeys(this, "CommandKeys", CommandKeysLabel(), settings.commandKeys,
@@ -107,9 +110,6 @@ VinputConfig::VinputConfig(const VinputSettings &settings)
       pageNextKeys(this, "PageNextKeys", PageNextKeysLabel(),
                    settings.pageNextKeys, TriggerKeyListConstrain(), {},
                    fcitx::ToolTipAnnotation(PageNextKeysTooltip())),
-      triggerMode(this, "TriggerMode", TriggerModeLabel(),
-                  settings.triggerMode, {}, {},
-                  TriggerModeI18NAnnotation()),
       modelManager(this, "ModelManager", _("Open Vinput Settings"),
                    "vinput-gui") {}
 

@@ -40,6 +40,11 @@ public:
   const char *typeName() const override { return "VinputConfig"; }
   VinputSettings settings() const;
 
+  fcitx::Option<TriggerMode, fcitx::NoConstrain<TriggerMode>,
+                fcitx::DefaultMarshaller<TriggerMode>,
+                TriggerModeI18NAnnotation>
+      triggerMode;
+
   fcitx::Option<fcitx::KeyList, fcitx::ListConstrain<fcitx::KeyConstrain>,
                 fcitx::DefaultMarshaller<fcitx::KeyList>,
                 fcitx::ToolTipAnnotation>
@@ -69,11 +74,6 @@ public:
                 fcitx::DefaultMarshaller<fcitx::KeyList>,
                 fcitx::ToolTipAnnotation>
       pageNextKeys;
-
-  fcitx::Option<TriggerMode, fcitx::NoConstrain<TriggerMode>,
-                fcitx::DefaultMarshaller<TriggerMode>,
-                TriggerModeI18NAnnotation>
-      triggerMode;
 
   fcitx::ExternalOption modelManager;
 };
