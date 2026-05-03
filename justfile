@@ -127,20 +127,21 @@ flatpak-permissions app_id=flatpak_host_app_id:
   flatpak override --user --filesystem=xdg-config/systemd:create {{app_id}}
 
 # Build Debian package using Docker
-# Example with proxy (uncomment and adjust as needed):
-# deb:
-#     @DOCKER_BUILDKIT=1 docker build \
-#         --add-host=host.docker.internal:host-gateway \
-#         --build-arg all_proxy=socks5h://host.docker.internal:1080 \
-#         --build-arg http_proxy=http://host.docker.internal:1081 \
-#         --build-arg https_proxy=http://host.docker.internal:1081 \
-#         --target exporter \
-#         -t fcitx5-vinput-builder \
-#         -f Dockerfile.debian \
-#         --output type=local,dest=. .
 deb:
     @DOCKER_BUILDKIT=1 docker build \
+        --target exporter \
+        -t fcitx5-vinput-builder \
+        -f Dockerfile.debian \
+        --output type=local,dest=. .
+
+# Example:
+#   APT_MIRROR=mirrors.tuna.tsinghua.edu.cn just deb-local
+#   http_proxy=http://host.docker.internal:1081 https_proxy=http://host.docker.internal:1081 just deb-local
+# Build Debian package with optional local network overrides.
+deb-local:
+    @DOCKER_BUILDKIT=1 docker build \
         --add-host=host.docker.internal:host-gateway \
+        --build-arg APT_MIRROR=${APT_MIRROR:-""} \
         --build-arg all_proxy=${all_proxy:-""} \
         --build-arg http_proxy=${http_proxy:-""} \
         --build-arg https_proxy=${https_proxy:-""} \
