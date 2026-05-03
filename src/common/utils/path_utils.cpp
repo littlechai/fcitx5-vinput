@@ -68,11 +68,11 @@ std::filesystem::path XdgCacheHome() {
   return std::filesystem::path(home) / ".cache";
 }
 
+} // namespace
+
 std::filesystem::path VinputConfigDir() { return XdgConfigHome() / "vinput"; }
 std::filesystem::path VinputDataDir() { return XdgDataHome() / "vinput"; }
 std::filesystem::path VinputCacheDir() { return XdgCacheHome() / "vinput"; }
-
-} // namespace
 
 std::string_view DaemonServiceUnitName() { return kDaemonServiceUnitName; }
 
