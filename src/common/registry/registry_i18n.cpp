@@ -1,10 +1,12 @@
 #include "common/registry/registry_i18n.h"
 
 #include <cstdlib>
+#include <fstream>
 #include <nlohmann/json.hpp>
 
 #include "common/config/core_config.h"
 #include "common/utils/downloader.h"
+#include "common/utils/path_utils.h"
 #include "common/registry/registry_cache.h"
 
 namespace vinput::registry {
@@ -75,6 +77,19 @@ I18nMap ParseI18nJson(const std::string &content, std::string *error) {
   return map;
 }
 
+I18nMap LoadLocalI18nOverrides() {
+  const auto local_path =
+      vinput::path::VinputConfigDir() / "i18n.local.json";
+  std::ifstream ifs(local_path);
+  if (!ifs) {
+    return {};
+  }
+
+  std::string content(std::istreambuf_iterator<char>(ifs), {});
+  std::string parse_error;
+  return ParseI18nJson(content, &parse_error);
+}
+
 } // namespace
 
 std::string DetectPreferredLocale() {
@@ -138,6 +153,12 @@ I18nMap FetchMergedI18nMap(const CoreConfig &config,
   if (error) {
     *error = fetch_error;
   }
+
+  auto local = LoadLocalI18nOverrides();
+  for (auto &[key, value] : local) {
+    merged[key] = std::move(value);
+  }
+
   return merged;
 }
 
