@@ -704,8 +704,8 @@ void LlmPage::onSceneAdd() {
   vinput::scene::Definition def;
   def.id = editId->text().trimmed().toStdString();
   def.label = editLabel->text().trimmed().toStdString();
-  def.prompt = editPrompt->toPlainText().toStdString();
-  def.provider_id = comboProvider->currentText().toStdString();
+  def.prompt = editPrompt->toPlainText().trimmed().toStdString();
+  def.provider_id = comboProvider->currentText().trimmed().toStdString();
   def.model = comboModel->currentText().trimmed().toStdString();
   def.context_lines = spinContextLines->value();
   def.candidate_count = spinCandidates->value();
@@ -790,8 +790,8 @@ void LlmPage::onSceneEdit() {
 
   vinput::scene::Definition def = *found;
   def.label = editLabel->text().trimmed().toStdString();
-  def.prompt = editPrompt->toPlainText().toStdString();
-  def.provider_id = comboProvider->currentText().toStdString();
+  def.prompt = editPrompt->toPlainText().trimmed().toStdString();
+  def.provider_id = comboProvider->currentText().trimmed().toStdString();
   def.model = comboModel->currentText().trimmed().toStdString();
   def.context_lines = spinContextLines->value();
   def.candidate_count = spinCandidates->value();

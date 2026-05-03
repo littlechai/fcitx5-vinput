@@ -197,8 +197,8 @@ int RunLlmConfigAdd(const std::string &id, const std::string &baseUrl,
   }
 
   LlmProvider provider;
-  provider.id = id;
-  provider.base_url = baseUrl;
+  provider.id = vinput::str::TrimAsciiWhitespace(id);
+  provider.base_url = vinput::str::TrimAsciiWhitespace(baseUrl);
   provider.api_key = vinput::str::TrimAsciiWhitespace(apiKey);
   provider.extra_body = std::move(extra_json);
   config.llm.providers.push_back(std::move(provider));
@@ -346,7 +346,7 @@ int RunLlmConfigEdit(const std::string &id, const std::string &baseUrl,
   }
 
   if (hasBaseUrl) {
-    it->base_url = baseUrl;
+    it->base_url = vinput::str::TrimAsciiWhitespace(baseUrl);
   }
   if (hasApiKey) {
     it->api_key = vinput::str::TrimAsciiWhitespace(apiKey);

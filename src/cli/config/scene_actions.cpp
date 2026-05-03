@@ -58,11 +58,11 @@ int RunSceneConfigAdd(const std::string &id, const std::string &label,
   CoreConfig config = LoadCoreConfig();
 
   vinput::scene::Definition def;
-  def.id = id;
-  def.label = label;
-  def.prompt = prompt;
-  def.provider_id = provider_id;
-  def.model = model;
+  def.id = vinput::str::TrimAsciiWhitespace(id);
+  def.label = vinput::str::TrimAsciiWhitespace(label);
+  def.prompt = vinput::str::TrimAsciiWhitespace(prompt);
+  def.provider_id = vinput::str::TrimAsciiWhitespace(provider_id);
+  def.model = vinput::str::TrimAsciiWhitespace(model);
   def.candidate_count = candidate_count;
   def.timeout_ms = timeout_ms;
   def.context_lines = context_lines;
@@ -147,10 +147,10 @@ int RunSceneConfigEdit(const std::string &id, const std::string &label,
   }
 
   vinput::scene::Definition updated = *existing;
-  if (hasLabel) updated.label = label;
-  if (hasPrompt) updated.prompt = prompt;
-  if (hasProvider) updated.provider_id = provider_id;
-  if (hasModel) updated.model = model;
+  if (hasLabel) updated.label = vinput::str::TrimAsciiWhitespace(label);
+  if (hasPrompt) updated.prompt = vinput::str::TrimAsciiWhitespace(prompt);
+  if (hasProvider) updated.provider_id = vinput::str::TrimAsciiWhitespace(provider_id);
+  if (hasModel) updated.model = vinput::str::TrimAsciiWhitespace(model);
   if (hasCandidates) updated.candidate_count = candidate_count;
   if (hasTimeout) updated.timeout_ms = timeout_ms;
   if (hasContextLines) updated.context_lines = context_lines;

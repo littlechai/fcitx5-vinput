@@ -75,7 +75,7 @@ int RunDeviceConfigUse(const std::string &name, Formatter &fmt,
     }
   }
 
-  config.global.captureDevice = name;
+  config.global.captureDevice = vinput::str::TrimAsciiWhitespace(name);
 
   if (!SaveConfigOrFail(config, fmt))
     return 1;
