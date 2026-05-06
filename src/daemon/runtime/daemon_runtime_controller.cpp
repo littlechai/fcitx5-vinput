@@ -5,6 +5,7 @@
 #include "common/i18n.h"
 #include "common/utils/debug_log.h"
 #include "daemon/audio/audio_utils.h"
+#include "daemon/remote/remote_text_service.h"
 
 #include <algorithm>
 #include <cmath>
@@ -200,11 +201,13 @@ vinput::daemon::asr::RecognitionRunResult FinishSessionAndCollectResult(
 DaemonRuntimeController::DaemonRuntimeController(
     AudioCapture *capture, DbusService *dbus,
     vinput::daemon::asr::RecognitionSessionManager *recognition_manager,
-    RecognitionPipeline *pipeline)
+    RecognitionPipeline *pipeline,
+    vinput::daemon::remote::RemoteTextService *remote_text_service)
     : capture_(capture),
       dbus_(dbus),
       recognition_manager_(recognition_manager),
-      pipeline_(pipeline) {
+      pipeline_(pipeline),
+      remote_text_service_(remote_text_service) {
   if (recognition_manager_) {
     recognition_manager_->SetReloadResultCallback(
         [this](bool success, const std::string &message) {
@@ -246,7 +249,17 @@ DbusService::MethodResult DaemonRuntimeController::StartCommandRecording(
 bool DaemonRuntimeController::SynchronizeAsrBackend(std::string *error) {
   auto runtime_settings = LoadCoreConfig();
   NormalizeCoreConfig(&runtime_settings);
-  return recognition_manager_->SynchronizeBackend(runtime_settings, error);
+  if (!recognition_manager_->SynchronizeBackend(runtime_settings, error)) {
+    return false;
+  }
+  if (remote_text_service_ &&
+      !remote_text_service_->Synchronize(runtime_settings, error)) {
+    return false;
+  }
+  if (error) {
+    error->clear();
+  }
+  return true;
 }
 
 DbusService::MethodResult DaemonRuntimeController::ReloadAsrBackend() {

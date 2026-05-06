@@ -17,6 +17,10 @@
 #include <thread>
 #include <vector>
 
+namespace vinput::daemon::remote {
+class RemoteTextService;
+}
+
 namespace vinput::daemon::runtime {
 
 class DaemonRuntimeController {
@@ -24,7 +28,8 @@ public:
   DaemonRuntimeController(
       AudioCapture *capture, DbusService *dbus,
       vinput::daemon::asr::RecognitionSessionManager *recognition_manager,
-      RecognitionPipeline *pipeline);
+      RecognitionPipeline *pipeline,
+      vinput::daemon::remote::RemoteTextService *remote_text_service = nullptr);
   ~DaemonRuntimeController();
 
   DbusService::MethodResult StartRecording();
@@ -60,6 +65,7 @@ private:
   DbusService *dbus_ = nullptr;
   vinput::daemon::asr::RecognitionSessionManager *recognition_manager_ = nullptr;
   RecognitionPipeline *pipeline_ = nullptr;
+  vinput::daemon::remote::RemoteTextService *remote_text_service_ = nullptr;
 
   mutable std::mutex state_mutex_;
   mutable std::mutex session_io_mutex_;

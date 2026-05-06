@@ -31,6 +31,7 @@ add_executable(daemon
     audio/audio_capture.cpp
     audio/audio_utils.cpp
     asr/vad_trimmer.cpp
+    remote/remote_text_service.cpp
     runtime/dbus_service.cpp
     runtime/daemon_runtime_controller.cpp
     runtime/recognition_pipeline.cpp

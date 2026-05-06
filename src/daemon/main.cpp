@@ -11,6 +11,7 @@
 #include "daemon/runtime/daemon_runtime_controller.h"
 #include "daemon/runtime/dbus_service.h"
 #include "daemon/runtime/recognition_pipeline.h"
+#include "daemon/remote/remote_text_service.h"
 #include "daemon/postprocess/post_processor.h"
 
 #include <poll.h>
@@ -566,10 +567,12 @@ int main(int argc, char *argv[]) {
 
   // --- Single-slot state (all protected by state_mutex) ---
   AdapterSupervisor adapter_supervisor(&dbus);
+  vinput::daemon::remote::RemoteTextService remote_text_service;
   vinput::daemon::runtime::RecognitionPipeline recognition_pipeline(
       &post_processor);
   vinput::daemon::runtime::DaemonRuntimeController runtime_controller(
-      &capture, &dbus, &recognition_manager, &recognition_pipeline);
+      &capture, &dbus, &recognition_manager, &recognition_pipeline,
+      &remote_text_service);
 
   dbus.SetStartHandler([&]() {
     return runtime_controller.StartRecording();
@@ -619,6 +622,14 @@ int main(int argc, char *argv[]) {
   }
 
   runtime_controller.StartWorker();
+  std::string remote_error;
+  if (!remote_text_service.Synchronize(startup_settings, &remote_error)) {
+    fprintf(stderr, "vinput-daemon: remote ASR service disabled");
+    if (!remote_error.empty()) {
+      fprintf(stderr, " (%s)", remote_error.c_str());
+    }
+    fprintf(stderr, "\n");
+  }
 
   fprintf(stderr, "vinput-daemon: running\n");
 
@@ -657,6 +668,7 @@ int main(int argc, char *argv[]) {
 
   fprintf(stderr, "vinput-daemon: shutting down\n");
   post_processor.Shutdown();
+  remote_text_service.Shutdown();
   runtime_controller.Shutdown();
   recognition_manager.Shutdown();
   adapter_supervisor.Shutdown();
