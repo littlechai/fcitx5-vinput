@@ -285,6 +285,14 @@ void ControlPage::populateAsrList(
     if (!markers.isEmpty()) {
       display += " · " + markers.join(", ");
     }
+    if (id == effective_id && backend_state &&
+        !backend_state->remote_endpoints.empty()) {
+      QStringList urls;
+      for (const auto &endpoint : backend_state->remote_endpoints) {
+        urls << QString::fromStdString(endpoint);
+      }
+      display += " · " + urls.join(" / ");
+    }
 
     auto *item = new QListWidgetItem(display, listAsrProviders_);
     item->setData(Qt::UserRole, id);

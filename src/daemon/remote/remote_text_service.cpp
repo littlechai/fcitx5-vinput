@@ -3,6 +3,8 @@
 #include "common/config/core_config.h"
 
 #include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <openssl/evp.h>
 #include <sys/socket.h>
@@ -320,15 +322,6 @@ std::string EnvValue(const std::map<std::string, std::string> &env,
     return {};
   }
   return Trim(it->second);
-}
-
-bool EnvBoolEnabled(std::string_view value, bool fallback) {
-  if (value.empty()) {
-    return fallback;
-  }
-  const std::string lowered = ToLower(Trim(value));
-  return lowered != "0" && lowered != "false" && lowered != "no" &&
-         lowered != "off";
 }
 
 std::optional<int> ParsePortFromWsUrl(std::string_view url) {
@@ -739,9 +732,7 @@ bool RemoteTextService::ExtractSettings(const CoreConfig &config,
     return true;
   }
 
-  const bool is_remote =
-      command->id == kRemoteProviderId ||
-      EnvBoolEnabled(EnvValue(command->env, "VINPUT_ASR_REMOTE"), false);
+  const bool is_remote = command->id == kRemoteProviderId;
   if (!is_remote) {
     if (error) {
       error->clear();
@@ -870,6 +861,42 @@ bool RemoteTextService::Synchronize(const CoreConfig &config, std::string *error
     Shutdown();
   }
   return Start(next_settings, error);
+}
+
+std::vector<std::string> RemoteTextService::ListEndpoints() const {
+  std::lock_guard<std::mutex> lock(lifecycle_mutex_);
+  if (!service_started_) {
+    return {};
+  }
+
+  ifaddrs *ifaddr = nullptr;
+  if (getifaddrs(&ifaddr) != 0) {
+    return {};
+  }
+
+  std::vector<std::string> endpoints;
+  for (ifaddrs *ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == nullptr || ifa->ifa_addr->sa_family != AF_INET) {
+      continue;
+    }
+    if ((ifa->ifa_flags & IFF_UP) == 0 ||
+        (ifa->ifa_flags & IFF_LOOPBACK) != 0) {
+      continue;
+    }
+    const auto *sa = reinterpret_cast<const sockaddr_in *>(ifa->ifa_addr);
+    char buf[INET_ADDRSTRLEN] = {};
+    if (inet_ntop(AF_INET, &sa->sin_addr, buf, sizeof(buf)) == nullptr) {
+      continue;
+    }
+    endpoints.emplace_back(std::string("http://") + buf + ":" +
+                           std::to_string(settings_.port));
+  }
+  freeifaddrs(ifaddr);
+
+  std::sort(endpoints.begin(), endpoints.end());
+  endpoints.erase(std::unique(endpoints.begin(), endpoints.end()),
+                  endpoints.end());
+  return endpoints;
 }
 
 bool RemoteTextService::Start(const Settings &settings, std::string *error) {

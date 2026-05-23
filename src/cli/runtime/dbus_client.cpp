@@ -128,6 +128,14 @@ bool DbusClient::GetAsrBackendState(vinput::dbus::AsrBackendState* state,
     sd_bus_message_read(reply, "sssssbb", &target_provider, &target_model,
                         &effective_provider, &effective_model, &last_error,
                         &reload_in_progress, &has_effective_backend);
+    std::vector<std::string> endpoints;
+    if (sd_bus_message_enter_container(reply, 'a', "s") >= 0) {
+        const char* endpoint = nullptr;
+        while (sd_bus_message_read_basic(reply, 's', &endpoint) > 0) {
+            endpoints.emplace_back(endpoint ? endpoint : "");
+        }
+        sd_bus_message_exit_container(reply);
+    }
     if (state) {
         state->target_provider_id = target_provider ? target_provider : "";
         state->target_model_id = target_model ? target_model : "";
@@ -136,6 +144,7 @@ bool DbusClient::GetAsrBackendState(vinput::dbus::AsrBackendState* state,
         state->last_error = last_error ? last_error : "";
         state->reload_in_progress = reload_in_progress != 0;
         state->has_effective_backend = has_effective_backend != 0;
+        state->remote_endpoints = std::move(endpoints);
     }
 
     sd_bus_message_unref(reply);

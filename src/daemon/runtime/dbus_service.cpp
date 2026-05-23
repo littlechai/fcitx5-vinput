@@ -51,7 +51,7 @@ static const sd_bus_vtable vtable[] = {
                   SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_METHOD(kMethodGetStatus, "", "s", &DbusService::handleGetStatus,
                   SD_BUS_VTABLE_UNPRIVILEGED),
-    SD_BUS_METHOD(kMethodGetAsrBackendState, "", "sssssbb",
+    SD_BUS_METHOD(kMethodGetAsrBackendState, "", "sssssbbas",
                   &DbusService::handleGetAsrBackendState,
                   SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_METHOD(kMethodReloadAsrBackend, "", "",
@@ -293,11 +293,40 @@ int DbusService::handleGetAsrBackendState(sd_bus_message *m, void *userdata,
   if (self->asr_backend_state_handler_) {
     state = self->asr_backend_state_handler_();
   }
-  return sd_bus_reply_method_return(
-      m, "sssssbb", state.target_provider_id.c_str(),
+  sd_bus_message *reply = nullptr;
+  int r = sd_bus_message_new_method_return(m, &reply);
+  if (r < 0) {
+    return r;
+  }
+  r = sd_bus_message_append(
+      reply, "sssssbb", state.target_provider_id.c_str(),
       state.target_model_id.c_str(), state.effective_provider_id.c_str(),
       state.effective_model_id.c_str(), state.last_error.c_str(),
       state.reload_in_progress ? 1 : 0, state.has_effective_backend ? 1 : 0);
+  if (r < 0) {
+    sd_bus_message_unref(reply);
+    return r;
+  }
+  r = sd_bus_message_open_container(reply, 'a', "s");
+  if (r < 0) {
+    sd_bus_message_unref(reply);
+    return r;
+  }
+  for (const auto &endpoint : state.remote_endpoints) {
+    r = sd_bus_message_append_basic(reply, 's', endpoint.c_str());
+    if (r < 0) {
+      sd_bus_message_unref(reply);
+      return r;
+    }
+  }
+  r = sd_bus_message_close_container(reply);
+  if (r < 0) {
+    sd_bus_message_unref(reply);
+    return r;
+  }
+  r = sd_bus_send(nullptr, reply, nullptr);
+  sd_bus_message_unref(reply);
+  return r;
 }
 
 int DbusService::handleReloadAsrBackend(sd_bus_message *m, void *userdata,

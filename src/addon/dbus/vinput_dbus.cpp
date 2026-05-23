@@ -634,7 +634,7 @@ bool VinputEngine::queryAsrBackendState(vinput::dbus::AsrBackendState *state,
   const_cast<VinputEngine *>(this)->clearDaemonSyncFailure();
 
   std::tuple<std::string, std::string, std::string, std::string, std::string,
-             bool, bool>
+             bool, bool, std::vector<std::string>>
       payload;
   reply >> payload;
   if (state) {
@@ -645,6 +645,7 @@ bool VinputEngine::queryAsrBackendState(vinput::dbus::AsrBackendState *state,
     state->last_error = std::move(std::get<4>(payload));
     state->reload_in_progress = std::get<5>(payload);
     state->has_effective_backend = std::get<6>(payload);
+    state->remote_endpoints = std::move(std::get<7>(payload));
     const_cast<VinputEngine *>(this)->cached_asr_backend_state_ = *state;
     const_cast<VinputEngine *>(this)->has_cached_asr_backend_state_ = true;
   }

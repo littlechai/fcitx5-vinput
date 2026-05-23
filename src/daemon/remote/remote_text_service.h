@@ -24,6 +24,8 @@ public:
   bool Synchronize(const CoreConfig &config, std::string *error);
   void Shutdown();
 
+  std::vector<std::string> ListEndpoints() const;
+
 private:
   struct Settings {
     int port = 8080;
@@ -60,7 +62,7 @@ private:
   void SendFinalResult();
 
   Settings settings_;
-  std::mutex lifecycle_mutex_;
+  mutable std::mutex lifecycle_mutex_;
   std::atomic<bool> running_{false};
   bool service_started_ = false;
   int listen_fd_ = -1;

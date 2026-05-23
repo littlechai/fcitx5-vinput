@@ -134,6 +134,14 @@ bool QueryAsrBackendStateFromUserBus(vinput::dbus::AsrBackendState *state) {
     sd_bus_unref(bus);
     return false;
   }
+  std::vector<std::string> endpoints;
+  if (sd_bus_message_enter_container(reply, 'a', "s") >= 0) {
+    const char *endpoint = nullptr;
+    while (sd_bus_message_read_basic(reply, 's', &endpoint) > 0) {
+      endpoints.emplace_back(endpoint ? endpoint : "");
+    }
+    sd_bus_message_exit_container(reply);
+  }
 
   if (state) {
     state->target_provider_id = target_provider ? target_provider : "";
@@ -143,6 +151,7 @@ bool QueryAsrBackendStateFromUserBus(vinput::dbus::AsrBackendState *state) {
     state->last_error = last_error ? last_error : "";
     state->reload_in_progress = reload_in_progress != 0;
     state->has_effective_backend = has_effective_backend != 0;
+    state->remote_endpoints = std::move(endpoints);
   }
 
   sd_bus_message_unref(reply);

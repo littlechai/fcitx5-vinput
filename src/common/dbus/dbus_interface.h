@@ -3,6 +3,7 @@
 #include "common/dbus/error_info.h"
 
 #include <string>
+#include <vector>
 
 namespace vinput::dbus {
 
@@ -46,6 +47,7 @@ struct AsrBackendState {
   std::string last_error;
   bool reload_in_progress = false;
   bool has_effective_backend = false;
+  std::vector<std::string> remote_endpoints;
 };
 
 inline const char *StatusToString(Status s) {

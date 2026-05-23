@@ -697,7 +697,7 @@ std::string DaemonRuntimeController::GetStatus() const {
 vinput::dbus::AsrBackendState DaemonRuntimeController::GetAsrBackendState()
     const {
   const auto snapshot = recognition_manager_->GetReloadSnapshot();
-  return vinput::dbus::AsrBackendState{
+  vinput::dbus::AsrBackendState state{
       .target_provider_id = snapshot.target_provider_id,
       .target_model_id = snapshot.target_model_id,
       .effective_provider_id = snapshot.effective_provider_id,
@@ -705,7 +705,12 @@ vinput::dbus::AsrBackendState DaemonRuntimeController::GetAsrBackendState()
       .last_error = snapshot.last_error,
       .reload_in_progress = snapshot.reload_in_progress,
       .has_effective_backend = snapshot.has_effective_backend,
+      .remote_endpoints = {},
   };
+  if (remote_text_service_) {
+    state.remote_endpoints = remote_text_service_->ListEndpoints();
+  }
+  return state;
 }
 
 int DaemonRuntimeController::GetNotifyFd() const { return notify_fd_; }
