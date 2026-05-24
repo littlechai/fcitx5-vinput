@@ -4,6 +4,7 @@
 #include "common/utils/debug_log.h"
 #include "common/utils/path_utils.h"
 #include "common/utils/url_utils.h"
+#include "daemon/postprocess/prompt_template.h"
 
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
@@ -306,16 +307,47 @@ RewriteWithOpenAiCompatible(const std::string &text,
     return std::nullopt;
   }
 
-  const std::string &effective_task =
-      task_prompt.empty() ? scene.prompt : task_prompt;
+  // For the regular path, scene.prompt may still be a `file:///` reference and
+  // needs resolution here. For the command path the caller (ProcessCommand)
+  // has already resolved command_scene.prompt before splicing in the ASR
+  // command, so task_prompt is always content.
+  std::string base_prompt = task_prompt.empty() ? scene.prompt : task_prompt;
+  if (task_prompt.empty() &&
+      vinput::prompt_template::IsFileUri(base_prompt)) {
+    std::string load_err;
+    auto loaded =
+        vinput::prompt_template::LoadFromFileUri(base_prompt, &load_err);
+    if (!loaded) {
+      if (error_out) {
+        *error_out =
+            "Prompt file load failed: " + base_prompt + ": " + load_err;
+      }
+      return std::nullopt;
+    }
+    base_prompt = std::move(*loaded);
+  }
 
-  const std::string system_content =
-      effective_task + BuildConstraintsSuffix(candidate_count);
   const std::string user_content =
       use_markdown_user_input ? BuildUserInputMarkdown(text) : text;
   const std::string context_prefix = BuildContextPrefix(scene.context_lines);
-  const std::string final_user_content =
-      context_prefix.empty() ? user_content : (context_prefix + user_content);
+
+  std::string effective_task;
+  std::string final_user_content;
+  if (vinput::prompt_template::HasInterpolation(base_prompt)) {
+    // Author opted into templating: {{context}} placement is their job, so we
+    // skip the legacy auto-prepend to avoid duplicating the history block.
+    vinput::prompt_template::Vars vars{
+        .result = text, .context = context_prefix};
+    effective_task = vinput::prompt_template::Interpolate(base_prompt, vars);
+    final_user_content = user_content;
+  } else {
+    effective_task = std::move(base_prompt);
+    final_user_content =
+        context_prefix.empty() ? user_content : (context_prefix + user_content);
+  }
+
+  const std::string system_content =
+      effective_task + BuildConstraintsSuffix(candidate_count);
 
   if (vinput::debug::Enabled()) {
     LogLlmInput(provider, url, text);
@@ -548,8 +580,23 @@ PostProcessor::ProcessCommand(const std::string &asr_text,
     return fallback;
   }
 
-  // task prompt: scene prompt header + raw voice command
+  // task prompt: scene prompt header + raw voice command. Resolve any
+  // `file:///` reference up front so the URI does not get concatenated with
+  // the ASR text (which would prevent the downstream IsFileUri check).
   std::string task_prompt = command_scene.prompt;
+  if (vinput::prompt_template::IsFileUri(task_prompt)) {
+    std::string load_err;
+    auto loaded =
+        vinput::prompt_template::LoadFromFileUri(task_prompt, &load_err);
+    if (!loaded) {
+      if (error_out) {
+        *error_out =
+            "Prompt file load failed: " + task_prompt + ": " + load_err;
+      }
+      return fallback;
+    }
+    task_prompt = std::move(*loaded);
+  }
   if (!task_prompt.empty() && task_prompt.back() != '\n') {
     task_prompt.push_back('\n');
   }

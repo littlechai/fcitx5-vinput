@@ -229,6 +229,17 @@ std::string RenderErrorMessage(const vinput::dbus::ErrorInfo &error) {
   if (error.code == kErrorCodeLlmHttpFailed) {
     return _("LLM request returned an HTTP error.");
   }
+  if (error.code == kErrorCodePromptFileLoadFailed) {
+    if (error.subject.empty()) {
+      return _("Failed to load prompt file.");
+    }
+    if (error.detail.empty()) {
+      return vinput::str::FmtStr(_("Failed to load prompt file '%s'."),
+                                 error.subject);
+    }
+    return vinput::str::FmtStr(_("Failed to load prompt file '%s': %s"),
+                               error.subject, error.detail);
+  }
   if (error.code == kErrorCodeProcessingUnknown) {
     return _("Unknown error during processing.");
   }

@@ -1,6 +1,7 @@
 #include "common/dbus/error_info.h"
 
 #include <cctype>
+#include <regex>
 #include <utility>
 
 namespace vinput::dbus {
@@ -315,6 +316,22 @@ ErrorInfo ClassifyKnownDetail(std::string_view text) {
   if (ConsumePrefix(&normalized, "HTTP ")) {
     return MakeErrorInfo(kErrorCodeLlmHttpFailed, {}, TrimAsciiWhitespace(text),
                          original);
+  }
+
+  normalized = text;
+  if (ConsumePrefix(&normalized, "Prompt file load failed: ")) {
+    // Payload format: `<file_uri>: <reason>`. The reason may contain `: `
+    // (e.g. errno strings), so a naive split is unsafe — anchor on the
+    // `file:///` URI and consume up to the first whitespace.
+    static const std::regex kPromptLoadRe(
+        R"(^(file:///\S+):\s+(.+)$)");
+    const std::string body = TrimAsciiWhitespace(normalized);
+    std::smatch m;
+    if (std::regex_match(body, m, kPromptLoadRe)) {
+      return MakeErrorInfo(kErrorCodePromptFileLoadFailed, m[1].str(),
+                           m[2].str(), original);
+    }
+    return MakeErrorInfo(kErrorCodePromptFileLoadFailed, {}, body, original);
   }
 
   if (text == "Unknown error during processing") {

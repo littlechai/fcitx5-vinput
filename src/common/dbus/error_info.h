@@ -86,6 +86,8 @@ constexpr const char *kErrorCodeLlmHttpFailed =
     "llm_http_failed";
 constexpr const char *kErrorCodeProcessingUnknown =
     "processing_unknown";
+constexpr const char *kErrorCodePromptFileLoadFailed =
+    "prompt_file_load_failed";
 
 ErrorInfo MakeErrorInfo(std::string code, std::string subject = {},
                         std::string detail = {}, std::string raw_message = {});

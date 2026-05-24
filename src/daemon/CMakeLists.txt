@@ -36,6 +36,7 @@ add_executable(daemon
     runtime/daemon_runtime_controller.cpp
     runtime/recognition_pipeline.cpp
     postprocess/post_processor.cpp
+    postprocess/prompt_template.cpp
 )
 
 set_target_properties(daemon PROPERTIES OUTPUT_NAME "vinput-daemon")
