@@ -89,11 +89,12 @@ void VinputEngine::handleKeyEvent(fcitx::Event &event) {
 
   if ((is_trigger || is_command) && !keyEvent.isRelease()) {
     auto now = std::chrono::steady_clock::now();
-    if (now - last_trigger_time_ < kTriggerDebounce) {
+    const auto since_last = now - last_trigger_time_;
+    last_trigger_time_ = now;
+    if (since_last < kTriggerDebounce) {
       keyEvent.filterAndAccept();
       return;
     }
-    last_trigger_time_ = now;
 
     cancelPendingStop();
 
