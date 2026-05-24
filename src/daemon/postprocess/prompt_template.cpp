@@ -99,8 +99,10 @@ std::string Interpolate(std::string_view tpl, const Vars &vars) {
     out.append(input, last, pos - last);
 
     const std::string name = match[1].str();
-    if (name == "result") {
-      out.append(vars.result);
+    if (name == "asr") {
+      out.append(vars.asr);
+    } else if (name == "selected") {
+      out.append(vars.selected);
     } else if (name == "context") {
       out.append(vars.context);
     } else {

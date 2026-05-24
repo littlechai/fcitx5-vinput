@@ -120,6 +120,25 @@ void LogLlmInput(const LlmProvider &provider, const std::string &url,
                      url.c_str(), QuoteForLog(text).c_str());
 }
 
+void LogLlmRequest(const LlmProvider &provider, const std::string &url,
+                   const curl_slist *headers, std::string_view body) {
+  // Debug-only: dump headers and body verbatim. The API key is included in
+  // plain text since this is gated by VINPUT_DEBUG and intended for local
+  // inspection; users who share logs are responsible for redacting first.
+  std::string header_dump;
+  for (const curl_slist *n = headers; n != nullptr; n = n->next) {
+    if (!header_dump.empty()) {
+      header_dump.append("; ");
+    }
+    header_dump.append(n->data ? n->data : "");
+  }
+  vinput::debug::Log(
+      "LLM request provider=%s url=%s headers=[%s]\n",
+      provider.id.empty() ? "(unnamed)" : provider.id.c_str(), url.c_str(),
+      header_dump.c_str());
+  vinput::debug::Log("LLM request body: %s\n", QuoteForLog(body).c_str());
+}
+
 void LogResponseBody(const char *prefix, const std::string &url,
                      std::string_view body) {
   vinput::debug::Log("%s %s: %s\n", prefix, url.c_str(),
@@ -290,7 +309,9 @@ RewriteWithOpenAiCompatible(const std::string &text,
                             std::string *error_out,
                             const std::string &task_prompt = {},
                             bool use_markdown_user_input = true,
-                            const std::atomic<bool> *cancel_flag = nullptr) {
+                            const std::atomic<bool> *cancel_flag = nullptr,
+                            std::string_view asr_var = {},
+                            std::string_view selected_var = {}) {
   if (scene.prompt.empty() && task_prompt.empty()) {
     return std::nullopt;
   }
@@ -309,8 +330,8 @@ RewriteWithOpenAiCompatible(const std::string &text,
 
   // For the regular path, scene.prompt may still be a `file:///` reference and
   // needs resolution here. For the command path the caller (ProcessCommand)
-  // has already resolved command_scene.prompt before splicing in the ASR
-  // command, so task_prompt is always content.
+  // has already resolved command_scene.prompt before deciding whether to
+  // splice in the ASR command, so task_prompt is always content.
   std::string base_prompt = task_prompt.empty() ? scene.prompt : task_prompt;
   if (task_prompt.empty() &&
       vinput::prompt_template::IsFileUri(base_prompt)) {
@@ -327,35 +348,46 @@ RewriteWithOpenAiCompatible(const std::string &text,
     base_prompt = std::move(*loaded);
   }
 
-  const std::string user_content =
-      use_markdown_user_input ? BuildUserInputMarkdown(text) : text;
   const std::string context_prefix = BuildContextPrefix(scene.context_lines);
+  const std::string constraints_suffix = BuildConstraintsSuffix(candidate_count);
 
-  std::string effective_task;
-  std::string final_user_content;
+  // We send a single user message. The output-format constraints are appended
+  // verbatim at the end regardless of interpolation, since downstream parsing
+  // depends on that contract.
+  std::string user_content;
   if (vinput::prompt_template::HasInterpolation(base_prompt)) {
-    // Author opted into templating: {{context}} placement is their job, so we
-    // skip the legacy auto-prepend to avoid duplicating the history block.
+    // Author owns the layout: `{{asr}}`, `{{selected}}` and `{{context}}`
+    // get substituted in-place; no auto-append of context or data text.
     vinput::prompt_template::Vars vars{
-        .result = text, .context = context_prefix};
-    effective_task = vinput::prompt_template::Interpolate(base_prompt, vars);
-    final_user_content = user_content;
+        .asr = asr_var.empty() ? std::string_view(text) : asr_var,
+        .selected = selected_var,
+        .context = context_prefix,
+    };
+    user_content = vinput::prompt_template::Interpolate(base_prompt, vars);
   } else {
-    effective_task = std::move(base_prompt);
-    final_user_content =
-        context_prefix.empty() ? user_content : (context_prefix + user_content);
+    // No interpolation — keep legacy data layout but flatten it into one
+    // user message: prompt header + history block + raw input + constraints.
+    user_content = std::move(base_prompt);
+    const std::string data_part =
+        use_markdown_user_input ? BuildUserInputMarkdown(text) : text;
+    if (!user_content.empty() && user_content.back() != '\n') {
+      user_content.append("\n\n");
+    } else if (!user_content.empty()) {
+      user_content.push_back('\n');
+    }
+    if (!context_prefix.empty()) {
+      user_content.append(context_prefix);
+    }
+    user_content.append(data_part);
   }
-
-  const std::string system_content =
-      effective_task + BuildConstraintsSuffix(candidate_count);
+  user_content.append(constraints_suffix);
 
   if (vinput::debug::Enabled()) {
     LogLlmInput(provider, url, text);
   }
 
   std::vector<json> messages;
-  messages.push_back({{"role", "system"}, {"content", system_content}});
-  messages.push_back({{"role", "user"}, {"content", final_user_content}});
+  messages.push_back({{"role", "user"}, {"content", user_content}});
 
   json request = {
       {"model", scene.model},
@@ -374,6 +406,10 @@ RewriteWithOpenAiCompatible(const std::string &text,
         std::string(vinput::llm::kAuthorizationHeader) + ": " +
         vinput::llm::kBearerPrefix + provider.api_key;
     guard.headers = curl_slist_append(guard.headers, auth.c_str());
+  }
+
+  if (vinput::debug::Enabled()) {
+    LogLlmRequest(provider, url, guard.headers, request_body);
   }
 
   curl_easy_setopt(guard.curl, CURLOPT_POST, 1L);
@@ -597,15 +633,30 @@ PostProcessor::ProcessCommand(const std::string &asr_text,
     }
     task_prompt = std::move(*loaded);
   }
-  if (!task_prompt.empty() && task_prompt.back() != '\n') {
-    task_prompt.push_back('\n');
+
+  // When the author opts into templating, they place the ASR command via
+  // `{{asr}}` and the selected source via `{{selected}}`. Otherwise we keep
+  // the legacy header behavior: append the ASR command after the prompt so
+  // the trailing `## Task` section gets populated.
+  const bool use_template =
+      vinput::prompt_template::HasInterpolation(task_prompt);
+  std::string_view asr_var;
+  std::string_view selected_var;
+  if (use_template) {
+    asr_var = normalized_asr;
+    selected_var = selected_text;
+  } else {
+    if (!task_prompt.empty() && task_prompt.back() != '\n') {
+      task_prompt.push_back('\n');
+    }
+    task_prompt += normalized_asr;
   }
-  task_prompt += normalized_asr;
 
   auto rewritten =
       RewriteWithOpenAiCompatible(selected_text, command_scene, *provider,
                                   command_candidate_count, error_out,
-                                  task_prompt, false, &shutting_down_);
+                                  task_prompt, false, &shutting_down_,
+                                  asr_var, selected_var);
 
   vinput::result::Payload payload;
   // 1st: original selected text (always)
