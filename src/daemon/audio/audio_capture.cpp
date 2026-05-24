@@ -145,7 +145,7 @@ bool AudioCapture::CreateStream(std::string *error) {
     return false;
   }
 
-  if (!target_object.empty()) {
+  if (!target_object.empty() && target_object != "default") {
     pw_properties_set(properties, PW_KEY_TARGET_OBJECT, target_object.c_str());
     fprintf(stderr, "vinput: using PipeWire target.object=%s\n",
             target_object.c_str());

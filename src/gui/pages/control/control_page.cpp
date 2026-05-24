@@ -190,7 +190,7 @@ void ControlPage::reload() {
   for (const auto& dev : devices) {
     QString name = QString::fromStdString(dev.name);
     QString desc = QString::fromStdString(dev.description);
-    QString label = desc.isEmpty() ? name : QString("%1 - %2").arg(name, desc);
+    QString label = desc.isEmpty() ? name : desc;
     comboDevice_->addItem(label, name);
     if (name == activeDevice) {
       comboDevice_->setCurrentIndex(comboDevice_->count() - 1);
